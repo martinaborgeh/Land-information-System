@@ -1,0 +1,164 @@
+
+
+
+ body, html {
+            height: 100%;
+            margin-top:20px;
+            padding-top:30px;
+           overflow:hidden; 
+            
+       } 
+
+       #yourmap {
+          
+          width: 100%;
+          height: 100%;
+          
+       }
+
+
+.search-container{
+ position: absolute;
+            top: 18vh;
+            left: 160px; 
+            z-index: 2147483647;
+}
+
+
+.submit-container{
+position: absolute;
+          
+            top: 18vh;
+            left: 200px;
+            z-index: 2147483647;
+}
+
+.filter-container{
+ position: absolute;
+          
+            top: 18vh;
+            left: 15px;
+            z-index: 2147483647;
+}
+.project_title{
+       background-color:white;
+       display:flex;
+       flex-direction:row;
+       position:fixed;
+       width:100%;
+       top:10px;
+       margin-top:5px;
+       left:0;
+       height:30px; 
+      z-index: 2147483647
+        
+}
+
+
+.project_title .Menu-Container{
+  right:0;
+  width:650px;
+  margin-top:10px;
+  margin-left:350px;
+  display:flex;
+  flex-direction:row;
+  justify-content:space-evenly;
+  color:blue;
+  
+}
+
+  
+a{
+color:blue;
+}
+
+
+ 
+
+.Read_Only_movable-container {
+  
+      position: absolute;
+     /* top: 50%;
+      /*left: 50%;
+      width: 800vw;
+      height: 450vh;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 2147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+}
+
+.Edit-Remove-Parcel{
+      display:block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 450px;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 3147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+}
+
+
+.Add-Parcel {
+        
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 450px;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 2147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+      
+}
+
+
+
+
+.Remove-Parcel {
+
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 450px;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 2147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+}
+
+ .Read_Only_movable-container .Details-container{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-evenly;
+  background-color:white
+
+}
+
+.Read_Only_movable-container .Details-container .other-land-details{
+ display:flex;
+  flex-direction-row;
+  background-color:blue;
+  justify-content:space-evenly
+}

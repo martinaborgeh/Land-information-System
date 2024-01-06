@@ -1,0 +1,2017 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Leaflet Map</title>
+
+    <!-- Leaflet CSS -->
+    {% load leaflet_tags %}
+    {% leaflet_js %}
+    {% leaflet_css %}   
+    <!-- Your custom CSS for map container size -->
+   <style>
+
+     .Add-Parcel {
+        
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 450px;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 2147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+      
+}
+
+    .Edit-Remove-Parcel{display:block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 450px;
+      background-color: white;
+      border: 1px solid #ddd;
+      resize: both;
+      overflow: auto;
+      z-index: 3147483647;
+      cursor:move;
+      margin-top: 10vh;
+      transform: translate(-50%, -50%);
+  }
+    .parcelzoomcontainer{
+           top:18vh;
+           left:300px;
+           z-index: 3147483649;
+           border-radius:100px;
+           position:absolute
+    }
+
+   </style>
+   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blob-util/1.2.1/blob-util.js"></script>
+   
+</head>
+
+<body> 
+
+<div  id  = "yourmap"></div>
+
+
+<div class = "search_by_parcel_id_or_owner_id-container" >
+
+<div style="display:flex;flex-direction:row;color:red;margin-left:120px;margin-top:22px">
+  <input class = "Enter_Parcel_Owner_ID" placeholder = "Search item" style = "border-radius:10px">
+  <input onclick = "SearchforEditandRemoveonly('.completeoptioncontainer','.Enter_Parcel_Owner_ID',window.editremoveurl,'Edit_Remove')" class = "search-by-parcelid-or-owner" type = "button" value= "Search" > 
+</div>
+</div> 
+
+<div class = "search-for-read-container">
+   <div style="display:flex;flex-direction:row;color:red;margin-left:120px;margin-top:22px">
+ 
+  <input  class = "viewparcel" placeholder = "Search item" style = "border-radius:10px">
+  <input onclick = "SearchforReadonly('.completeoptioncontainer','.viewparcel',window.readonlyurl)" id = "loadGeoJSONButton"  class = "search-by-by-any-other" type = "button" value= "Search"> 
+
+</div> 
+</div>
+
+
+
+
+ <div class = "Read_or_Edit_Category_Container" style = "display:flex;flex-direction:row;background-color:white;border-radius:20px;width:200px;padding-left:20px;padding-top:54px;height:40px;position: absolute;resize: both;top:50%;left:50%;overflow: auto;z-index: 2147483647;cursor:move" > 
+<select onclick= "GotoSearchbyEditorRemove('.completeoptioncontainer','.Read_or_Edit_Category')" class = "Read_or_Edit_Category" style ="height:30px;width:300px;margin-left:90px;margin-top:7px;border-radius:10px"  id="cars" name="cars">
+    <option  disabled selected>choose mode</option>
+    <option >View Only</option>
+    <option >Remove or Edit</option>
+  </select>
+
+ </div> 
+
+ <div class = "Activity-Type-Container" style = "display:flex;flex-direction:row;background-color:white;border-radius:20px;width:200px;padding-left:20px;padding-top:54px;height:40px;position: absolute;resize: both;top:50%;left:50%;overflow: auto;z-index: 2147483647;cursor:move" > 
+<select onclick= "select_category('.completeoptioncontainer','.choose-search-type')" class = "choose-search-type" style ="height:30px;width:300px;margin-left:90px;margin-top:7px;border-radius:10px"  id="cars" name="cars">
+   <option  disabled selected>SEARCH BY</option>
+    <option >PARCEL ID</option>
+    <option >PARCEL OWNER ID</option>
+    <option >DISTRICT</option>
+    <option >LAND REGION</option>
+    <option >LAND STATUS</option>
+    <option >LOCALITY</option>
+    <option >CHIEF INVOLVED</option>
+    <option >SURVEYOR LICENSE</option>
+    <option >INTEREST IN LAND</option>
+    
+  </select>
+
+ </div> 
+
+
+
+<!-- for options display and remove or edit-->
+
+
+<div  style =  "text-align:center;padding-top:60px;background-color:white;top:50%;left:30%;z-index:2147483647;border:1px solid blue;position:absolute;width:100%;height:200px;width:500px" class = "completeoptioncontainer"></div>
+
+
+
+
+<div style = "display:flex;flex-direction:column;justify-contents:left" class = "parcel_details" >
+
+
+   
+    <label >PARCEL ID:</label>
+    <input class="parcel_id" type="text"   required>
+
+    <label for="lastName">PARCEL DISTRICT:</label>
+    <input  class="parcel_district" type="text"   required>
+
+    <label for="email">PARCEL REGION:</label>
+    <input class="parcel_region" type="email"   required>
+
+    <label for="gender">PARCEL LOCALITY:</label>
+    <input class="parcel_locality"  type="email"  required>
+
+    <label for="gender">PARCEL STATUS:</label>
+    <input class="parcel_status" type="email"   required>
+
+    <label for="gender">PARCEL INTEREST:</label>
+    <input class ="parcel_interest" type="email"   required>
+
+   <div class = "coordinates" style =  "display:flex;flex-direction:row;padding-top:10px"> 
+   <label style = "margin-right:4px" for="gender">PARCEL COORDINATES:</label>
+    <input class = "Northings" style = "margin-right:7px" placeholder = "Northings"   type="text"   required>
+    <input class = "Eastings" placeholder = "Eastings" class ="parcel_interest" type="text"   required>
+    <input onclick = "AddCoordinates('.add-parcel-dynamic-container','.coordinates','.Northings','.Eastings')" style="width:90px; height:35px;background-color:lightgreen" class ="parcel_interest" type="button" value = "ADD"  required>
+    <input onclick = "ClearAllCoordinates()"  style="width:90px;background-color:lightgreen; height:35px" type="button"   value = "CLEAR ALL" required>
+   </div>
+
+
+
+</div>
+<div class = "surveyor_details">
+
+
+
+    <label for="firstName">License Number:</label>
+    <input class="surveyor_license" type="text"   required>
+
+    <label for="lastName">Surname:</label>
+    <input class = "surveyor_surname" type="text"   required>
+
+    <label for="email">First Name:</label>
+    <input class="surveyor_firstname" type="email"   required/>
+
+    <label for="gender">Location:</label>
+    <input class="surveyor_location" type="email"   required>
+    
+    <label for="gender">Gender:</label>
+    <input class="surveyor_gender" type="email"   required>
+
+    <label for="gender">Age:</label>
+    <input class="surveyor_age" type="email"   required>
+
+    <label for="gender">Marital Status:</label>
+    <input class="surveyor_marital_status" type="email"  required>
+    <label for="gender">Contact:</label>
+    <input class="surveyor_contact" type="email"  required>
+
+     <label for="gender">Ghana Card No:</label>
+    <input class="surveyor_ghana_card_id" type="email"   required>
+
+    <label for="gender">Qualification:</label>
+    <input class="surveyor_qualification" type="email"   required>
+
+    <label for="gender">Year of Completion:</label>
+    <input class="surveyor_year_of_completion" type="email"   required>
+
+    <label for="gender">Institution of Completion:</label>
+    <input class="surveyor_institution_of_completion" type="email"   required>
+
+    <label for="gender">Professional Body:</label>
+    <input class="surveyor_professional_body" type="email"  required>
+ 
+    <label >Email:</label>
+    <input class="surveyor_email" type="email"    required>
+
+    <label for="gender">Image:</label>
+    <input class="surveyor_image" type="file"   accept="image/*" required>
+    
+</div>
+
+
+<div class =  "chief_details">
+     
+
+     
+    <label for="firstName">ID:</label>
+    <input class="chief_id" type="text"   required>
+
+    <label for="lastName">Surname:</label>
+    <input class="chief_surname" type="text"   required>
+
+    <label for="email">First Name:</label>
+    <input class="chief_firstname" type="text"   required>
+
+    <label for="gender">Location:</label>
+    <input class="chief_location" type="text"   required>
+
+    <label for="gender">District:</label>
+    <input class="chief_district" type="text"   required>
+
+    <label for="gender">Region:</label>
+    <input class="chief_region" type="text"   required>
+
+    <label for="gender">Marital Status:</label>
+    <input class="chief_marital_status" type="text"  required>
+
+    <label for="gender">Contact:</label>
+    <input class="chief_contact" type="text"   required>
+
+     <label for="gender">Ghana Card No:</label>
+    <input class="chief_ghana_card_id" type="text"   required>
+
+    <label for="gender">Qualification:</label>
+    <input class="chief_qualification" type="text"  required>
+
+    <label for="gender">Rank of Chieftancy:</label>
+    <input class="chief_rank_of_chieftancy" type="text"   required>
+
+    <label for="gender">Year of Enstoolment:</label>
+    <input class="chief_year_of_enstoolment" type="text"   required>
+
+    <label for="gender">Year of Chieftancy End:</label>
+    <input class="chief_year_of_chieftancy_end" type="text"  required>
+
+    <label for="gender">Gender:</label>
+    <input class="chief_gender" type="text"   required>
+   
+    <label >Email:</label>
+    <input class="chief_email" type="email"    required>
+
+     <label for="gender">Image:</label>
+    <input class="chief_image" type="file"   accept="image/*" required>
+   
+
+
+</div>
+
+<div class =  "parcel_owner_details">
+
+
+
+    <label for="firstName">Parcel Owner ID:</label>
+    <input class="parcel_owner_id" type="text"   required>
+
+    <label for="lastName">Surname:</label>
+    <input class="parcel_owner_surname" type="text"  required>
+
+    <label for="email">First Name:</label>
+    <input class="parcel_owner_firstname" type="text"   required>
+
+    <label for="gender">Location:</label>
+    <input class="parcel_owner_location" type="text"   required>
+
+    <label for="gender">Gender:</label>
+    <input class="parcel_owner_gender" type="text"  required>
+
+    <label for="gender">Age:</label>
+    <input class="parcel_owner_age" type="text"  required>
+
+    <label for="gender">Marital Status:</label>
+    <input class="parcel_owner_marital_status" type="text"   required>
+    <label for="gender">Contact:</label>
+    <input class="parcel_owner_contact" type="text"   required>
+
+     <label for="gender">Ghana Card No:</label>
+    <input class="parcel_owner_ghana_card_id" type="text"  required>
+
+    <label for="gender">Qualification:</label>
+    <input class="parcel_owner_qualification" type="text"   required>
+
+    <label for="gender">Next of Kin:</label>
+    <input class="parcel_owner_next_of_kin" type="text"   required>
+
+    <label for="gender">Next of Kin Contact:</label>
+    <input class="parcel_owner_next_of_kin_contact" type="text"   required>
+    
+ 
+    <label >Email:</label>
+    <input class="parcel_owner_email" type="email"    required>
+ 
+    <label for="gender">Image:</label>
+    <input class="parcel_owner_image" type="file"   accept="image/*" required> 
+    
+
+
+</div>
+
+
+
+
+<!-- Initial content will be replaced dynamically -->
+
+
+
+
+<div class = "Add-Parcel">
+
+<div style = "position:sticky;z-index:1; left:0;top:0px;width:500px;display:flex;flex-direction:row;justify-content:space-between;align-items:left;background-color:blue;color:white;height:30px;padding-top:10px">
+      <p class =  "parcel_owner_nav_color" style ="margin-left:10px">Parcel Owner Details</p>
+      <p class =  "chief_nav_color" >Chief Details</p>
+      <p class =  "surveyor_nav_color" >Surveyor Details</p>
+      <p class =  "parcel_nav_color" >Land Details</p>
+   </div>
+  
+   <div  style =  "border:1px solid blue;position:relative;width:100%;height:387px" class = "add-parcel-dynamic-container"></div>
+
+<button  style = "background-color:blue;color:white;left:72%;bottom:0px;position:sticky" onclick = "display_or_hide_details('.Add-Parcel')" >cancel</button>
+<button  style = "background-color:blue;color:white;left:82%;bottom:0px;position:sticky" onclick = "previousnavigation('.add-parcel-dynamic-container','')" >previous</button>
+<button class = "nextbutton" style = "background-color:blue;color:white;left:100%;bottom:0px;position:sticky" onclick = "nextnavigation('.add-parcel-dynamic-container','','')" >Next</button> 
+    
+</div>
+
+
+
+
+<div class = "Edit-Remove-Parcel" >
+  <div style = "position:sticky;z-index:1; left:0;top:0px;width:500px;display:flex;flex-direction:row;justify-content:space-between;align-items:left;background-color:blue;color:white;height:30px;padding-top:10px">
+      <p class =  "parcel_owner_nav_color1" style ="margin-left:10px">Parcel Owner Details</p>
+      <p class =  "chief_nav_color1" >Chief Details</p>
+      <p class =  "surveyor_nav_color1" >Surveyor Details</p>
+      <p class =  "parcel_nav_color1" >Land Details</p>
+   </div>
+   <div style =  "border:1px solid blue;position:absolute;width:100%;height:387px" class = "edit-remove-parcel-dynamic-container"></div>
+
+ <button class = "editremovecancel" style = "top:410px;background-color:blue;color:white;left:72%;bottom:0px;position:sticky" onclick = "display_or_hide_details('.Edit-Remove-Parcel')" >cancel</button>
+<button  class = "editremoveprevious" style = "top:410px;background-color:blue;color:white;left:82%;bottom:0px;position:sticky" onclick = "previousnavigation('.edit-remove-parcel-dynamic-container','remove_or_edit','')" >previous</button>
+<button class = "nextbutton1" style = "top:410px;background-color:blue;color:white;left:100%;bottom:0px;position:sticky" onclick = "nextnavigation('.edit-remove-parcel-dynamic-container','remove_or_edit','','edit')" >Next</button> 
+<button class = "Removedatbtn" style = "top:410px;background-color:blue;color:white;left:100%;bottom:0px;position:sticky" onclick = "Removedata(window.removeurl,'status')" >Edit</button> 
+
+</div>
+
+
+
+
+ 
+<div style = "left:2%;top:25%;width:1200px;height:500px;z-index: 2147483657;position:absolute;overflow:auto;resize: both;background-color: white"  class = "Read_Only_movable-container">
+   <button onclick ="closeReadOnlyView()"  style = "color:red;z-index: 2147483649;margin-left:91%;position:fixed" >x</button> 
+  <h2  style = "margin-bottom:40px;text-align:center;background-color:blue;color:white">Parcel Transaction Details</h2>
+
+  <div  class = "Details-container" >
+      <div  class = " land-Details" >
+                   <h3 style = "background-color:green;color:yellow;text-align:center"  >Land Details</h3>
+                    
+                     <div style = "display:flex;flex-direction:row">
+                    
+                       <div style = "border:1px solid blue">
+                         <h5 style = "text-align:center;margin-bottom:5px;border:1px solid blue;height:35px">Spatial data</h5>
+                        <div style = "width:600px;display:flex;flex-direction:column;text-align:center">
+                            
+                               <div style = "text-align:center;width:100%" >
+                                  <h5 style = "text-align:center">GHANA NATIONAL GRID</h3>
+                                  <div style = "display:flex;flex-direction:row;text-align:center;margin-left:100px">
+                                     <div style = "display:flex;flex-direction:column" class = "northings"><label   style ="font-weight:bold" >Northings</label></div>
+                                     <div style = "display:flex;flex-direction:column" class = "eastings"><label  style ="font-weight:bold" >Eastings</label></div>  
+                                  </div>  
+                               </div>
+
+                                <div style = "text-align:center;width:100%">
+                                  <h5 style = "text-align:center">WGS 84 </h3>
+                                  <div class = "wgs84coord" style = "text-align:center;display:flex;flex-direction:row;margin-left:100px" >
+                                     <div style = "display:flex;flex-direction:column" class = "latitudes"><label   style ="font-weight:bold" >Latitudes</label></div>
+                                     <div style = "display:flex;flex-direction:column" class = "longitudes"><label   style ="font-weight:bold" >Longitudes</label></div>  
+                                  </div>
+                                </div>
+                        </div>
+                    </div>
+                       <div style = "border:1px solid blue;width:600px"> 
+                      
+                        <h5 style = "text-align:center;border:1px solid blue;height:35px" >Land Attribute details </h3>
+                           <div style = "margin-left:130px">
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>ID</label><input class = "parcel1_id" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>District</label><input class = "parcel1_district" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Region</label><input class = "parcel1_region" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Locality</label><input class = "parcel1_locality" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Status</label><input class = "parcel1_status" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Parcel Interest</label><input class = "parcel1_interest" type="text" id="readOnlyField" readonly></div>
+                                <div style = "display:flex;flex-direction:column;width:300px" ><label>Chief ID</label><input class = "parcel1_chief_id"  type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Surveyor ID</label><input class = "parcel1_surveyor_license" type="text" id="readOnlyField" readonly></div>
+                                <div  style = "display:flex;flex-direction:column;width:300px" ><label>Parcel Owner ID</label><input class = "parcel1_owner_id" type="text" id="readOnlyField" readonly></div>
+                           </div>
+                     </div>
+                 </div>
+              </div>
+      </div>
+      
+     <div>
+         <h3 style = "background-color:green;color:yellow;text-align:center"  >Parties involved in the Land Transaction</h3>
+       <div style = "display:flex;flex-direction:row;background-color:white" class = "other-land-details">
+          <div style = "display:flex;flex-direction:column;margin-left:14px" class = "Owner">
+             <div style="width:318px;height:159px;border 1px solid blue"><input type="image" style = "object-fit: cover;width:100%;height:100%" class = "owner_image" alt="Image Description"></div>
+                 <div style = "display:flex;flex-direction:column">
+                    <label style = "text-align:center"> Parcel Owner</label>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>ID</label><input class = "owner_id" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Surname</label><input class = "owner_surname" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Firstname</label><input class = "owner_firstname" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Location</label><input class = "owner_location" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Gender</label><input class = "owner_gender" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Age</label><input class = "owner_age" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Marital Status</label><input class = "owner_marital_status" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Contact</label><input class = "owner_contact" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Ghana Card ID</label><input class = "owner_ghana_id" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Qualification</label><input class = "owner_qualification" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Next of Kin</label><input class = "owner_next_of_kin" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Next of Kin Contact</label><input class = "owner_next_of_kin_contact" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Email</label><input class = "owner_email" type="text" id="readOnlyField" readonly></div>
+                      
+                 </div>
+           </div>
+          <div style = "display:flex;flex-direction:column;margin-left:130px" class = "Chief">
+              <div style="width:318px;height:159px";border 1px solid blue"><input type="image" style = "object-fit: cover;width:100%;height:100%"  class = "chief1_image" alt="Image Description"></div>
+                 <div style = "display:flex;flex-direction:column"> 
+                    <label style = "text-align:center"> Chief</label>
+                  <div  style = "display:flex;flex-direction:column;width:300px"><label>ID</label><input class = "chief1_id" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Surname</label><input class = "chief1_surname" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Firstname</label><input class = "chief1_firstname"  type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>Location</label><input class = "chief1_location" type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>District</label><input class = "chief1_district" type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>Region</label><input class = "chief1_region" type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>Marital Status</label><input class = "chief1_marital_status" type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>Contact</label><input class = "chief1_contact" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Ghana Card ID</label><input class = "chief1_ghana_card_id" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Qualification</label><input class = "chief1_qualification" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Rank of Chieftancy</label><input class = "chief1_chief_rank" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Chieftancy End Date</label><input class = "chief1_end" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Year of Enstoolment</label><input class = "chief1_enstool_year" type="text" id="readOnlyField" readonly></div>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>Gender</label><input class = "chief1_gender" type="text" id="readOnlyField" readonly></div>
+                      <div   style = "display:flex;flex-direction:column;width:300px" ><label>Email</label><input class = "chief1_email" type="text" id="readOnlyField" readonly></div>
+                 </div>
+           </div>
+          <div style = "display:flex;flex-direction:column;margin-left:130px"  class = "Surveyor">
+            <div style="width:318px;height:159px;border 1px solid blue"><input type="image" style = "object-fit: cover;width:100%;height:100%"  class = "surveyor1_image" alt="Image Description"></div>
+            <div style = "display:flex;flex-direction:column">
+                       <label style = "text-align:center"> Licensed Surveyor</label>
+                     <div   style = "display:flex;flex-direction:column;width:300px" ><label>License</label><input class = "surveyor1_license" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Surname</label><input class = "surveyor1_surname" type="text" id="readOnlyField" readonly></div>
+                    <div  style = "display:flex;flex-direction:column;width:300px" ><label>Firstname</label><input class = "surveyor1_firstname" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Location</label><input class = "surveyor1_location" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Gender</label><input class = "surveyor1_gender" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Age</label><input class = "surveyor1_age" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Marital Status</label><input class = "surveyor1_marital_status" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Contact</label><input class = "surveyor1_contact" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Ghana Card ID</label><input class = "surveyor1_ghana_id" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Qualification</label><input class = "surveyor1_qualification" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Completion Year</label><input class = "surveyor1_completion_year" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Institution</label><input class = "surveyor1_institution" type="text" id="readOnlyField" readonly></div>
+                      <div  style = "display:flex;flex-direction:column;width:300px" ><label>Professional Body</label><input class = "surveyor1_prof_body" type="text" id="readOnlyField" readonly></div>
+                     <div  style = "display:flex;flex-direction:column;width:300px" ><label>Email</label><input class = "surveyor1_email" type="text" id="readOnlyField" readonly></div>
+                      
+            </div>
+          </div>
+        
+        </div>
+      </div>
+   </div>  
+</div>
+
+<!-- Dynamically handling add edit and removal -->
+
+ 
+
+ 
+
+  <div class = "project_title" >
+
+   <h1 style = "width:400px;color:green;font-size:25px">Land Information System</h1>
+  
+   
+   <div style = "color:blue;margin-left:600px;display:flex;flex-direction:row">
+     <a style = " margin-right:15px">map</a>
+     <a style = "margin-right:15px">contact</a>
+     <a style = "margin-right:15px">home</a>
+     <a >login</a>
+    
+   </div>
+
+ </div>
+
+
+
+<div class="parcelzoomcontainer" >
+<input class = "parcelzoom" placeholder =  "Zoom by Parcel ID" onkeydown="handleKeyDown(event)" >
+</div>
+
+
+<div class =  "filter-container">
+  
+  <select style ="height:30px;border-radius:10px"  onclick = Activitytype(".select_search_type") class="select_search_type">
+   <option  disabled selected>Operation Type</option>
+    <option >Add Parcel</option>
+    <option >View or Edit or Remove</option>
+
+  </select>
+</div>
+
+
+
+
+<!-- Adding Map layers-->
+
+<script type = "text/javascript">
+var map = L.map('yourmap').setView([6.6885, -1.6244], 17)
+function map_init_basic(map,options){   
+  var standardLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    zoomControl: false,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map)
+
+// Mapbox Satellite Map Layer
+  var satelliteLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: 'Satellite View'
+            });
+
+
+// Google Maps Hybrid Map Layer (satellite with labels)
+  var googleHybridLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+  });
+
+
+// Add Layer Control
+ var baseMaps = {
+    "Standard Map": standardLayer,
+    "Satellite View": satelliteLayer,
+    "Google Maps Hybrid": googleHybridLayer
+  };
+   map.removeControl(map.zoomControl);
+  L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+   L.control.zoom({ position: 'topright' }).addTo(map)
+ }
+ 
+ //  window.onload = function () {
+         //  var map = L.map('yourmap').setView([6.6885, -1.6244], 17); // Set Kumasi coordinates and zoom level
+map_init_basic(map);
+          
+      //  };
+ </script>
+    
+{% leaflet_map "yourmap" callback="window.map_init_basic" %}
+<!-- Handling Dockable div container-->
+<script>
+
+function MovableContainer(classname){
+  const container = document.querySelector(classname);
+function onMouseDrag({ movementX, movementY }) {
+    let getContainerStyle = window.getComputedStyle(container);
+    let leftValue = parseInt(getContainerStyle.left);
+    let topValue = parseInt(getContainerStyle.top);
+    container.style.left = `${leftValue + movementX}px`;
+    container.style.top = `${topValue + movementY}px`;
+}
+container.addEventListener("mousedown", () => {
+    container.addEventListener("mousemove", onMouseDrag);
+});
+document.addEventListener("mouseup", () => {
+    container.removeEventListener("mousemove", onMouseDrag);
+});}
+
+MovableContainer(".Read_Only_movable-container")
+MovableContainer(".Add-Parcel")
+//MovableContainer(".Edit-Remove-Parcel")
+//MovableContainer(".Remove-Parcel")
+MovableContainer(".completeoptioncontainer")
+</script>
+
+
+<script>
+ function display_or_hide_details(classname) {
+      const element = document.querySelector(classname);
+      const currentDisplay = window.getComputedStyle(element).getPropertyValue('display');
+        
+        
+      // Toggle visibility
+     element.style.display = currentDisplay === 'none' ? 'block' : 'none';
+    }
+
+display_or_hide_details(".Add-Parcel")
+display_or_hide_details(".Edit-Remove-Parcel")
+
+display_or_hide_details(".Read_Only_movable-container")
+display_or_hide_details(".parcel_details")
+display_or_hide_details(".surveyor_details")
+display_or_hide_details(".chief_details")
+display_or_hide_details(".parcel_owner_details")
+//display_or_hide_details(".edit-search-category")
+display_or_hide_details(".completeoptioncontainer")
+//display_or_hide_details(".search_by_parcel_id_or_owner_id-container")
+display_or_hide_details(".Read_or_Edit_Category_Container")
+display_or_hide_details(".Activity-Type-Container")
+display_or_hide_details(".Removedatbtn")
+
+</script>
+
+<script>
+
+
+
+function changeContent(dynamic_content_classname, updatecontents_classname) {
+        // Get the div element
+        console.log("run")
+        var dynamicContentDiv = document.querySelector(dynamic_content_classname);
+        var updatecontents = document.querySelector(updatecontents_classname);
+        const currentDisplay = window.getComputedStyle(dynamicContentDiv).getPropertyValue('display');
+
+        // Create new content (you can fetch this dynamically)
+        var newContent = updatecontents.innerHTML;
+       
+
+        // Set the innerHTML of the div to the new content
+        dynamicContentDiv.innerHTML = newContent;
+        dynamicContentDiv.style.display = currentDisplay === 'none' ? 'flex' : 'flex';
+        dynamicContentDiv.style.flexDirection = currentDisplay === 'none' ? 'column' : 'column';
+        dynamicContentDiv.style.height = currentDisplay === '890px' ? '890px' : '890px';
+       
+       
+        
+    }
+
+function changeContentforSearch(dynamic_content_classname, updatecontents_classname) {
+        // Get the div element
+        console.log("run")
+        var dynamicContentDiv = document.querySelector(dynamic_content_classname);
+        var updatecontents = document.querySelector(updatecontents_classname);
+        const currentDisplay = window.getComputedStyle(dynamicContentDiv).getPropertyValue('display');
+
+        // Create new content (you can fetch this dynamically)
+        var newContent = updatecontents.innerHTML;
+       
+
+        // Set the innerHTML of the div to the new content
+        dynamicContentDiv.innerHTML = newContent;
+        dynamicContentDiv.style.display = currentDisplay === 'none' ? 'flex' : 'flex';
+        dynamicContentDiv.style.flexDirection = currentDisplay === 'none' ? 'column' : 'column';
+        dynamicContentDiv.style.height = currentDisplay === '50' ? '50' : '50';
+       
+        dynamicContentDiv.style.borderRadius = currentDisplay === '50px' ? '50px' : '50px';
+        
+       
+       
+        
+    }
+
+
+
+function change_header_nav(classname){
+   // const ParentselectElement = document.querySelector(ParentClassname);
+    //const header_element = ParentselectElement.querySelector(classname);
+   const header_element = document.querySelector(classname);
+    
+    const currentColor = window.getComputedStyle(header_element).color;
+  
+
+if(classname ===".parcel_owner_nav_color" || classname === ".parcel_owner_nav_color1"){
+
+      if(currentColor === 'rgb(255, 255, 255)'){
+         header_element.style.color='rgb(255, 255, 0)'
+         
+        }else if(currentColor ==='rgb(255, 255, 0)'){
+        header_element.style.color = 'rgb(255, 255, 255)'
+  }
+}
+
+   else if (classname ===".chief_nav_color" || classname ==='.chief_nav_color1'){
+
+      if(currentColor === 'rgb(255, 255, 255)'){
+       header_element.style.color='rgb(255, 255, 0)'
+         
+       }else if(currentColor ==='rgb(255, 255, 0)'){
+      header_element.style.color = 'rgb(255, 255, 255)'
+    }
+ }
+
+ else if (classname ===".surveyor_nav_color" || classname ===".surveyor_nav_color1" ){
+        if(currentColor === 'rgb(255, 255, 255)'){
+       header_element.style.color='rgb(255, 255, 0)'
+         
+       }else if(currentColor ==='rgb(255, 255, 0)'){
+       header_element.style.color = 'rgb(255, 255, 255)'
+   }
+}
+
+else if (classname ===".parcel_nav_color" || classname ===".parcel_nav_color1"){
+
+       if(currentColor === 'rgb(255, 255, 255)'){
+       header_element.style.color='rgb(255, 255, 0)'
+         
+      }else if(currentColor ==='rgb(255, 255, 0)'){
+      header_element.style.color = 'rgb(255, 255, 255)'
+   }
+ }
+
+
+
+ }
+
+var count = 1
+function nextnavigation(dynamic_container,activity,edit_or_remove){
+      count = count+1
+
+      if (count ===1){
+
+          if(activity ==='remove_or_edit'){
+           change_header_nav(".parcel_owner_nav_color1")
+          }
+          
+           change_header_nav(".parcel_owner_nav_color")
+           ReturnToInput(dynamic_container,".parcel_owner_id",RetrieveFromObjectStorage("parcel_owner_id"))
+           ReturnToInput(dynamic_container,".parcel_owner_surname",RetrieveFromObjectStorage("parcel_owner_surname"))
+           ReturnToInput(dynamic_container,".parcel_owner_firstname",RetrieveFromObjectStorage("parcel_owner_firstname"))
+           ReturnToInput(dynamic_container,".parcel_owner_location",RetrieveFromObjectStorage("parcel_owner_location"))
+           ReturnToInput(dynamic_container,".parcel_owner_gender",RetrieveFromObjectStorage("parcel_owner_gender"))
+           ReturnToInput(dynamic_container,".parcel_owner_age",RetrieveFromObjectStorage("parcel_owner_age"))
+           ReturnToInput(dynamic_container,".parcel_owner_marital_status",RetrieveFromObjectStorage("parcel_owner_marital_status"))
+           ReturnToInput(dynamic_container,".parcel_owner_contact",RetrieveFromObjectStorage("parcel_owner_contact"))
+           ReturnToInput(dynamic_container,".parcel_owner_ghana_card_id",RetrieveFromObjectStorage("parcel_owner_ghana_card_id"))
+           ReturnToInput(dynamic_container,".parcel_owner_qualification",RetrieveFromObjectStorage("parcel_owner_qualification"))
+           ReturnToInput(dynamic_container,".parcel_owner_next_of_kin",RetrieveFromObjectStorage("parcel_owner_next_of_kin"))
+           ReturnToInput(dynamic_container,".parcel_owner_next_of_kin_contact",RetrieveFromObjectStorage("parcel_owner_next_of_kin_contact"))
+           
+           ReturnToInput(dynamic_container,".parcel_owner_image",RetrieveFromObjectStorage("parcel_owner_image"))
+           ReturnToInput(dynamic_container,".parcel_owner_email",RetrieveFromObjectStorage("parcel_owner_email"))
+           changeLabel(".nextbutton","Next")
+           
+          
+         
+      } 
+      if (count ===2){
+ 
+          
+
+          if(activity ==='remove_or_edit'){
+           change_header_nav(".parcel_owner_nav_color1")
+           change_header_nav(".chief_nav_color1")
+          }
+        
+         change_header_nav(".parcel_owner_nav_color")
+         change_header_nav(".chief_nav_color")
+
+           SaveLInLocalStorage("parcel_owner_id",GetfromInputtag(dynamic_container,'.parcel_owner_id'))
+           SaveLInLocalStorage("parcel_owner_surname",GetfromInputtag(dynamic_container,".parcel_owner_surname"))
+           SaveLInLocalStorage("parcel_owner_firstname",GetfromInputtag(dynamic_container,".parcel_owner_firstname"))
+           SaveLInLocalStorage("parcel_owner_location",GetfromInputtag(dynamic_container,".parcel_owner_location"))
+           SaveLInLocalStorage("parcel_owner_gender",GetfromInputtag(dynamic_container,".parcel_owner_gender"))
+           SaveLInLocalStorage("parcel_owner_age",GetfromInputtag(dynamic_container,".parcel_owner_age"))
+           SaveLInLocalStorage("parcel_owner_marital_status",GetfromInputtag(dynamic_container,".parcel_owner_marital_status"))
+           SaveLInLocalStorage("parcel_owner_contact",GetfromInputtag(dynamic_container,".parcel_owner_contact"))
+          SaveLInLocalStorage("parcel_owner_ghana_card_id",GetfromInputtag(dynamic_container,".parcel_owner_ghana_card_id"))
+           SaveLInLocalStorage("parcel_owner_qualification",GetfromInputtag(dynamic_container,".parcel_owner_qualification"))
+          SaveLInLocalStorage("parcel_owner_next_of_kin",GetfromInputtag(dynamic_container,".parcel_owner_next_of_kin"))
+           SaveLInLocalStorage("parcel_owner_next_of_kin_contact",GetfromInputtag(dynamic_container,".parcel_owner_next_of_kin_contact"))
+          handleFileEncodingAndReturn(dynamic_container,"parcel_owner_image",".parcel_owner_image")
+          // SaveLInLocalStorage("parcel_owner_image",GetfromInputtag(dynamic_container,".parcel_owner_image"))
+           SaveLInLocalStorage("parcel_owner_email",GetfromInputtag(dynamic_container,".parcel_owner_email"))
+          changeContent(dynamic_container, ".chief_details")
+        
+         ReturnToInput(dynamic_container,".chief_id",RetrieveFromObjectStorage("chief_id"))
+         ReturnToInput(dynamic_container,".chief_surname",RetrieveFromObjectStorage("chief_surname"))
+        ReturnToInput(dynamic_container,".chief_firstname",RetrieveFromObjectStorage("chief_firstname"))
+        ReturnToInput(dynamic_container,".chief_location",RetrieveFromObjectStorage("chief_location"))
+         ReturnToInput(dynamic_container,".chief_district",RetrieveFromObjectStorage("chief_district"))
+         ReturnToInput(dynamic_container,".chief_region",RetrieveFromObjectStorage("chief_region"))
+         ReturnToInput(dynamic_container,".chief_marital_status",RetrieveFromObjectStorage("chief_marital_status"))
+         ReturnToInput(dynamic_container,".chief_contact",RetrieveFromObjectStorage("chief_contact"))
+         ReturnToInput(dynamic_container,".chief_ghana_card_id",RetrieveFromObjectStorage("chief_ghana_card_id"))
+         ReturnToInput(dynamic_container,".chief_qualification",RetrieveFromObjectStorage("chief_qualification"))
+         ReturnToInput(dynamic_container,".chief_rank_of_chieftancy",RetrieveFromObjectStorage("chief_rank_of_chieftancy"))
+        ReturnToInput(dynamic_container,".chief_year_of_chieftancy_end",RetrieveFromObjectStorage("chief_year_of_chieftancy_end"))
+         ReturnToInput(dynamic_container,".chief_year_of_enstoolment",RetrieveFromObjectStorage("chief_year_of_enstoolment"))
+         ReturnToInput(dynamic_container,".chief_gender",RetrieveFromObjectStorage("chief_gender"))
+         ReturnToInput(dynamic_container,".chief_image",RetrieveFromObjectStorage("chief_image"))
+         ReturnToInput(dynamic_container,".chief_email",RetrieveFromObjectStorage("chief_email"))
+        changeLabel(".nextbutton","Next")
+          
+
+     }
+
+ 
+      if (count ===3) {
+
+         if(activity ==='remove_or_edit'){
+           
+           change_header_nav(".chief_nav_color1")
+           change_header_nav(".surveyor_nav_color1")
+          }
+        
+         
+         change_header_nav(".chief_nav_color")
+         change_header_nav(".surveyor_nav_color")
+         
+
+         SaveLInLocalStorage("chief_id",GetfromInputtag(dynamic_container,".chief_id"))
+         SaveLInLocalStorage("chief_surname",GetfromInputtag(dynamic_container,".chief_surname"))
+         SaveLInLocalStorage("chief_firstname",GetfromInputtag(dynamic_container,".chief_firstname"))
+         SaveLInLocalStorage("chief_location",GetfromInputtag(dynamic_container,".chief_location"))
+         SaveLInLocalStorage("chief_district",GetfromInputtag(dynamic_container,".chief_district"))
+         SaveLInLocalStorage("chief_region",GetfromInputtag(dynamic_container,".chief_region"))
+         SaveLInLocalStorage("chief_marital_status",GetfromInputtag(dynamic_container,".chief_marital_status"))
+         SaveLInLocalStorage("chief_contact",GetfromInputtag(dynamic_container,".chief_contact"))
+         SaveLInLocalStorage("chief_ghana_card_id",GetfromInputtag(dynamic_container,".chief_ghana_card_id"))
+         SaveLInLocalStorage("chief_qualification",GetfromInputtag(dynamic_container,".chief_qualification"))
+         SaveLInLocalStorage("chief_rank_of_chieftancy",GetfromInputtag(dynamic_container,".chief_rank_of_chieftancy"))
+         SaveLInLocalStorage("chief_year_of_chieftancy_end",GetfromInputtag(dynamic_container,".chief_year_of_chieftancy_end"))
+         SaveLInLocalStorage("chief_year_of_enstoolment",GetfromInputtag(dynamic_container,".chief_year_of_enstoolment"))
+         SaveLInLocalStorage("chief_gender",GetfromInputtag(dynamic_container,".chief_gender"))
+         handleFileEncodingAndReturn(dynamic_container,"chief_image",".chief_image")
+         //SaveLInLocalStorage("chief_image",GetfromInputtag(dynamic_container,".chief_image"))
+         SaveLInLocalStorage("chief_email",GetfromInputtag(dynamic_container,".chief_email"))
+        
+         changeContent(dynamic_container, ".surveyor_details")
+
+         ReturnToInput(dynamic_container,".surveyor_license",RetrieveFromObjectStorage("surveyor_license"))
+         ReturnToInput(dynamic_container,".surveyor_surname",RetrieveFromObjectStorage("surveyor_surname"))
+         ReturnToInput(dynamic_container,".surveyor_firstname",RetrieveFromObjectStorage("surveyor_firstname"))
+         ReturnToInput(dynamic_container,".surveyor_location",RetrieveFromObjectStorage("surveyor_location"))
+         ReturnToInput(dynamic_container,".surveyor_gender",RetrieveFromObjectStorage("surveyor_gender"))
+         ReturnToInput(dynamic_container,".surveyor_age",RetrieveFromObjectStorage("surveyor_age"))
+         ReturnToInput(dynamic_container,".surveyor_marital_status",RetrieveFromObjectStorage("surveyor_marital_status"))
+         ReturnToInput(dynamic_container,".surveyor_contact",RetrieveFromObjectStorage("surveyor_contact"))
+         ReturnToInput(dynamic_container,".surveyor_ghana_card_id",RetrieveFromObjectStorage("surveyor_ghana_card_id"))
+         ReturnToInput(dynamic_container,".surveyor_qualification",RetrieveFromObjectStorage("surveyor_qualification"))
+         ReturnToInput(dynamic_container,".surveyor_year_of_completion",RetrieveFromObjectStorage("surveyor_year_of_completion"))
+         ReturnToInput(dynamic_container,".surveyor_institution_of_completion",RetrieveFromObjectStorage("surveyor_institution_of_completion"))
+         ReturnToInput(dynamic_container,".surveyor_professional_body",RetrieveFromObjectStorage("surveyor_professional_body"))
+         ReturnToInput(dynamic_container,".surveyor_image",RetrieveFromObjectStorage("surveyor_image"))
+         ReturnToInput(dynamic_container,".surveyor_email",RetrieveFromObjectStorage("surveyor_email"))
+         changeLabel(".nextbutton","Next")
+      
+}
+
+      if (count ===4) {
+      
+        if(activity ==='remove_or_edit'){
+           
+           
+           change_header_nav(".surveyor_nav_color1")
+           change_header_nav(".parcel_nav_color1")
+          }
+        
+        change_header_nav(".surveyor_nav_color")
+        change_header_nav(".parcel_nav_color")
+     
+         SaveLInLocalStorage("surveyor_license",GetfromInputtag(dynamic_container,".surveyor_license"))
+         SaveLInLocalStorage("surveyor_surname",GetfromInputtag(dynamic_container,".surveyor_surname"))
+         SaveLInLocalStorage("surveyor_firstname",GetfromInputtag(dynamic_container,".surveyor_firstname"))
+         SaveLInLocalStorage("surveyor_location",GetfromInputtag(dynamic_container,".surveyor_location"))
+         SaveLInLocalStorage("surveyor_gender",GetfromInputtag(dynamic_container,".surveyor_gender"))
+         SaveLInLocalStorage("surveyor_age",GetfromInputtag(dynamic_container,".surveyor_age"))
+         SaveLInLocalStorage("surveyor_marital_status",GetfromInputtag(dynamic_container,".surveyor_marital_status"))
+         SaveLInLocalStorage("surveyor_contact",GetfromInputtag(dynamic_container,".surveyor_contact"))
+         SaveLInLocalStorage("surveyor_ghana_card_id",GetfromInputtag(dynamic_container,".surveyor_ghana_card_id"))
+         SaveLInLocalStorage("surveyor_qualification",GetfromInputtag(dynamic_container,".surveyor_qualification"))
+         SaveLInLocalStorage("surveyor_year_of_completion",GetfromInputtag(dynamic_container,".surveyor_year_of_completion"))
+         SaveLInLocalStorage("surveyor_institution_of_completion",GetfromInputtag(dynamic_container,".surveyor_institution_of_completion"))
+         SaveLInLocalStorage("surveyor_professional_body",GetfromInputtag(dynamic_container,".surveyor_professional_body"))
+          handleFileEncodingAndReturn(dynamic_container,"surveyor_image",".surveyor_image")
+        // SaveLInLocalStorage("surveyor_image",GetfromInputtag(dynamic_container,".surveyor_image"))
+         SaveLInLocalStorage("surveyor_email",GetfromInputtag(dynamic_container,".surveyor_email"))
+         changeContent(dynamic_container, ".parcel_details")
+
+        ReturnToInput(dynamic_container,".parcel_id",RetrieveFromObjectStorage("parcel_id"))
+         ReturnToInput(dynamic_container,".parcel_district",RetrieveFromObjectStorage("parcel_district"))
+         ReturnToInput(dynamic_container,".parcel_region",RetrieveFromObjectStorage("parcel_region"))
+         ReturnToInput(dynamic_container,".parcel_locality",RetrieveFromObjectStorage("parcel_locality"))
+         ReturnToInput(dynamic_container,".parcel_status",RetrieveFromObjectStorage("parcel_status"))
+         ReturnToInput(dynamic_container,".parcel_interest",RetrieveFromObjectStorage("parcel_interest"))
+         changeLabel(".nextbutton","Submit")
+        
+          if(activity ==='remove_or_edit'){
+           display_or_hide_details(".Removedatbtn")
+           
+           const removebtn = document.querySelector(".Removedatbtn")
+           const editremovecancelbtn = document.querySelector(".editremovecancel")
+           const editremovepreviousbtn= document.querySelector(".editremoveprevious")
+           const editremovenextbtn = document.querySelector(".nextbutton1");
+           
+           editremovecancelbtn.style.left = "52%"
+           editremovepreviousbtn.style.left = "62%"
+           editremovenextbtn.style.left = '85%'
+           removebtn.style.left = '100%'
+           changeLabel(".nextbutton1","Edit")
+           changeLabel(".Removedatbtn","Remove")
+
+           }
+       }
+       
+
+
+       if (count ===5){
+
+          SaveLInLocalStorage("parcel_id",GetfromInputtag(dynamic_container,".parcel_id"))
+          SaveLInLocalStorage("parcel_district",GetfromInputtag(dynamic_container,".parcel_district"))
+          SaveLInLocalStorage("parcel_region",GetfromInputtag(dynamic_container,".parcel_region"))
+          SaveLInLocalStorage("parcel_locality",GetfromInputtag(dynamic_container,".parcel_locality"))
+          SaveLInLocalStorage("parcel_status",GetfromInputtag(dynamic_container,".parcel_status"))
+          SaveLInLocalStorage("parcel_interest",GetfromInputtag(dynamic_container,".parcel_interest"))
+        
+           if(activity ==='remove_or_edit'){
+             Editdata(CollectData(),"{% url 'EditParcel' %}","status")
+           }
+          else{
+            Submitdtata(CollectData(),"{% url 'Createparceldetails' %}",'status')
+           
+          }
+
+          if(edit_or_remove ==='edit'){
+         window.editdataurl =  "{% url 'EditParcel' %}" 
+         Editdata(CollectData(),window.editdataurl,'status')
+       }
+          count = count - 1
+      }
+}
+
+
+function previousnavigation(dynamic_container,activity){
+      count = count-1   
+
+      if (count ===1){
+
+         if(activity ==='remove_or_edit'){
+           
+           
+           change_header_nav(".chief_nav_color1")
+         change_header_nav(".parcel_owner_nav_color1")
+          }
+        
+        
+         change_header_nav(".chief_nav_color")
+         change_header_nav(".parcel_owner_nav_color")
+
+        SaveLInLocalStorage("chief_id",GetfromInputtag(dynamic_container,".chief_id"))
+        SaveLInLocalStorage("chief_surname",GetfromInputtag(dynamic_container,".chief_surname"))
+        SaveLInLocalStorage("chief_firstname",GetfromInputtag(dynamic_container,".chief_firstname"))
+        SaveLInLocalStorage("chief_location",GetfromInputtag(dynamic_container,".chief_location"))
+        SaveLInLocalStorage("chief_district",GetfromInputtag(dynamic_container,".chief_district"))
+        SaveLInLocalStorage("chief_region",GetfromInputtag(dynamic_container,".chief_region"))
+        SaveLInLocalStorage("chief_marital_status",GetfromInputtag(dynamic_container,".chief_marital_status"))
+        SaveLInLocalStorage("chief_contact",GetfromInputtag(dynamic_container,".chief_contact"))
+        SaveLInLocalStorage("chief_ghana_card_id",GetfromInputtag(dynamic_container,".chief_ghana_card_id"))
+        SaveLInLocalStorage("chief_qualification",GetfromInputtag(dynamic_container,".chief_qualification"))
+        SaveLInLocalStorage("chief_rank_of_chieftancy",GetfromInputtag(dynamic_container,".chief_rank_of_chieftancy"))
+        SaveLInLocalStorage("chief_year_of_chieftancy_end",GetfromInputtag(dynamic_container,".chief_year_of_chieftancy_end"))
+        SaveLInLocalStorage("chief_year_of_enstoolment",GetfromInputtag(dynamic_container,".chief_year_of_enstoolment"))
+        SaveLInLocalStorage("chief_gender",GetfromInputtag(dynamic_container,".chief_gender"))
+        handleFileEncodingAndReturn(dynamic_container,"chief_image",".chief_image")
+       // SaveLInLocalStorage("chief_image",GetfromInputtag(dynamic_container,".chief_image"))
+        SaveLInLocalStorage("chief_email",GetfromInputtag(dynamic_container,".chief_email"))
+        changeContent(dynamic_container, ".parcel_owner_details")
+
+          ReturnToInput(dynamic_container,".parcel_owner_id",RetrieveFromObjectStorage("parcel_owner_id"))
+          ReturnToInput(dynamic_container,".parcel_owner_surname",RetrieveFromObjectStorage("parcel_owner_surname"))
+          ReturnToInput(dynamic_container,".parcel_owner_firstname",RetrieveFromObjectStorage("parcel_owner_firstname"))
+          ReturnToInput(dynamic_container,".parcel_owner_location",RetrieveFromObjectStorage("parcel_owner_location"))
+          ReturnToInput(dynamic_container,".parcel_owner_gender",RetrieveFromObjectStorage("parcel_owner_gender"))
+          ReturnToInput(dynamic_container,".parcel_owner_age",RetrieveFromObjectStorage("parcel_owner_age"))
+          ReturnToInput(dynamic_container,".parcel_owner_marital_status",RetrieveFromObjectStorage("parcel_owner_marital_status"))
+          ReturnToInput(dynamic_container,".parcel_owner_contact",RetrieveFromObjectStorage("parcel_owner_contact"))
+         ReturnToInput(dynamic_container,".parcel_owner_ghana_card_id",RetrieveFromObjectStorage("parcel_owner_ghana_card_id"))
+         ReturnToInput(dynamic_container,".parcel_owner_qualification",RetrieveFromObjectStorage("parcel_owner_qualification"))
+         ReturnToInput(dynamic_container,".parcel_owner_next_of_kin",RetrieveFromObjectStorage("parcel_owner_next_of_kin"))
+         ReturnToInput(dynamic_container,".parcel_owner_next_of_kin_contact",RetrieveFromObjectStorage("parcel_owner_next_of_kin_contact"))
+         ReturnToInput(dynamic_container,".parcel_owner_image",RetrieveFromObjectStorage("parcel_owner_image"))
+         ReturnToInput(dynamic_container,".parcel_owner_email",RetrieveFromObjectStorage("parcel_owner_email"))
+         changeLabel(".nextbutton","Next")
+      }
+      if (count ===2){
+       
+        if(activity ==='remove_or_edit'){
+           
+           
+         change_header_nav(".surveyor_nav_color1")
+         change_header_nav(".chief_nav_color1")
+          }
+        
+         
+         change_header_nav(".surveyor_nav_color")
+         change_header_nav(".chief_nav_color")
+
+         SaveLInLocalStorage("surveyor_license",GetfromInputtag(dynamic_container,".surveyor_license"))
+         SaveLInLocalStorage("surveyor_surname",GetfromInputtag(dynamic_container,".surveyor_surname"))
+         SaveLInLocalStorage("surveyor_firstname",GetfromInputtag(dynamic_container,".surveyor_firstname"))
+         SaveLInLocalStorage("surveyor_location",GetfromInputtag(dynamic_container,".surveyor_location"))
+         SaveLInLocalStorage("surveyor_gender",GetfromInputtag(dynamic_container,".surveyor_gender"))
+         SaveLInLocalStorage("surveyor_age",GetfromInputtag(dynamic_container,".surveyor_age"))
+         SaveLInLocalStorage("surveyor_marital_status",GetfromInputtag(dynamic_container,".surveyor_marital_status"))
+         SaveLInLocalStorage("surveyor_contact",GetfromInputtag(dynamic_container,".surveyor_contact"))
+         SaveLInLocalStorage("surveyor_ghana_card_id",GetfromInputtag(dynamic_container,".surveyor_ghana_card_id"))
+         SaveLInLocalStorage("surveyor_qualification",GetfromInputtag(dynamic_container,".surveyor_qualification"))
+         SaveLInLocalStorage("surveyor_year_of_completion",GetfromInputtag(dynamic_container,".surveyor_year_of_completion"))
+         SaveLInLocalStorage("surveyor_institution_of_completion",GetfromInputtag(dynamic_container,".surveyor_institution_of_completion"))
+         SaveLInLocalStorage("surveyor_professional_body",GetfromInputtag(dynamic_container,".surveyor_professional_body"))
+         handleFileEncodingAndReturn(dynamic_container,"surveyor_image",".surveyor_image")
+         //SaveLInLocalStorage("surveyor_image",GetfromInputtag(dynamic_container,".surveyor_image"))
+         SaveLInLocalStorage("surveyor_email",GetfromInputtag(dynamic_container,".surveyor_email"))
+         changeContent(dynamic_container, ".chief_details")
+
+         ReturnToInput(dynamic_container,".chief_id",RetrieveFromObjectStorage("chief_id"))
+         ReturnToInput(dynamic_container,".chief_surname",RetrieveFromObjectStorage("chief_surname"))
+         ReturnToInput(dynamic_container,".chief_firstname",RetrieveFromObjectStorage("chief_firstname"))
+         ReturnToInput(dynamic_container,".chief_location",RetrieveFromObjectStorage("chief_location"))
+         ReturnToInput(dynamic_container,".chief_district",RetrieveFromObjectStorage("chief_district"))
+         ReturnToInput(dynamic_container,".chief_region",RetrieveFromObjectStorage("chief_region"))
+         ReturnToInput(dynamic_container,".chief_marital_status",RetrieveFromObjectStorage("chief_marital_status"))
+         ReturnToInput(dynamic_container,".chief_contact",RetrieveFromObjectStorage("chief_contact"))
+         ReturnToInput(dynamic_container,".chief_ghana_card_id",RetrieveFromObjectStorage("chief_ghana_card_id"))
+         ReturnToInput(dynamic_container,".chief_qualification",RetrieveFromObjectStorage("chief_qualification"))
+         ReturnToInput(dynamic_container,".chief_rank_of_chieftancy",RetrieveFromObjectStorage("chief_rank_of_chieftancy"))
+         ReturnToInput(dynamic_container,".chief_year_of_chieftancy_end",RetrieveFromObjectStorage("chief_year_of_chieftancy_end"))
+         ReturnToInput(dynamic_container,".chief_year_of_enstoolment",RetrieveFromObjectStorage("chief_year_of_enstoolment"))
+         ReturnToInput(dynamic_container,".chief_gender",RetrieveFromObjectStorage("chief_gender"))
+         ReturnToInput(dynamic_container,".chief_image",RetrieveFromObjectStorage("chief_image"))
+         ReturnToInput(dynamic_container,".chief_email",RetrieveFromObjectStorage("chief_email"))
+          changeLabel(".nextbutton","Next")
+         
+         
+     }
+
+
+      if (count ===3) {
+         if(activity ==='remove_or_edit'){
+           
+           display_or_hide_details(".Removedatbtn")
+           const editremovecancelbtn = document.querySelector(".editremovecancel")
+           const editremovepreviousbtn= document.querySelector(".editremoveprevious")
+           const editremovenextbtn = document.querySelector(".nextbutton1");
+           
+           editremovecancelbtn.style.left = "72%"
+           editremovepreviousbtn.style.left = "82%"
+           editremovenextbtn.style.left = '100%'
+           changeLabel(".nextbutton1","Next")
+ 
+           change_header_nav(".parcel_nav_color1")
+           change_header_nav(".surveyor_nav_color1")
+           
+
+           }
+
+          
+         change_header_nav(".parcel_nav_color")
+         change_header_nav(".surveyor_nav_color")
+
+         SaveLInLocalStorage("parcel_id",GetfromInputtag(dynamic_container,".parcel_id"))
+         SaveLInLocalStorage("parcel_district",GetfromInputtag(dynamic_container,".parcel_district"))
+         SaveLInLocalStorage("parcel_region",GetfromInputtag(dynamic_container,".parcel_region"))
+         SaveLInLocalStorage("parcel_locality",GetfromInputtag(dynamic_container,".parcel_locality"))
+        SaveLInLocalStorage("parcel_status",GetfromInputtag(dynamic_container,".parcel_status"))
+         SaveLInLocalStorage("parcel_interest",GetfromInputtag(dynamic_container,".parcel_interest"))
+         
+        changeContent(dynamic_container, ".surveyor_details")
+        changeLabel(".nextbutton","Next")
+
+         ReturnToInput(dynamic_container,".surveyor_license",RetrieveFromObjectStorage("surveyor_license"))
+         ReturnToInput(dynamic_container,".surveyor_surname",RetrieveFromObjectStorage("surveyor_surname"))
+         ReturnToInput(dynamic_container,".surveyor_firstname",RetrieveFromObjectStorage("surveyor_firstname"))
+         ReturnToInput(dynamic_container,".surveyor_location",RetrieveFromObjectStorage("surveyor_location"))
+         ReturnToInput(dynamic_container,".surveyor_gender",RetrieveFromObjectStorage("surveyor_gender"))
+         ReturnToInput(dynamic_container,".surveyor_age",RetrieveFromObjectStorage("surveyor_age"))
+         ReturnToInput(dynamic_container,".surveyor_marital_status",RetrieveFromObjectStorage("surveyor_marital_status"))
+         ReturnToInput(dynamic_container,".surveyor_contact",RetrieveFromObjectStorage("surveyor_contact"))
+         ReturnToInput(dynamic_container,".surveyor_ghana_card_id",RetrieveFromObjectStorage("surveyor_ghana_card_id"))
+         ReturnToInput(dynamic_container,".surveyor_qualification",RetrieveFromObjectStorage("surveyor_qualification"))
+         ReturnToInput(dynamic_container,".surveyor_year_of_completion",RetrieveFromObjectStorage("surveyor_year_of_completion"))
+         ReturnToInput(dynamic_container,".surveyor_institution_of_completion",RetrieveFromObjectStorage("surveyor_institution_of_completion"))
+         ReturnToInput(dynamic_container,".surveyor_professional_body",RetrieveFromObjectStorage("surveyor_professional_body"))
+         ReturnToInput(dynamic_container,".surveyor_image",RetrieveFromObjectStorage("surveyor_image"))
+         ReturnToInput(dynamic_container,".surveyor_email",RetrieveFromObjectStorage("surveyor_email"))
+         changeLabel(".nextbutton","Next")
+         
+         
+      }
+
+     // if (count ===4) {
+       //   {}
+         //changeContent(".add-parcel-dynamic-container", ".parcel_details")
+         //change_header_nav(".parcel_nav_color")
+         //ReturnToInput(".parcel_id",RetrieveFromObjectStorage("parcel_id"))
+        // ReturnToInput(".parcel_district",RetrieveFromObjectStorage("parcel_district"))
+         //ReturnToInput(".parcel_region",RetrieveFromObjectStorage("parcel_region"))
+        // ReturnToInput(".parcel_locality",RetrieveFromObjectStorage("parcel_locality"))
+         //ReturnToInput(".parcel_status",RetrieveFromObjectStorage("parcel_status"))
+         //ReturnToInput(".parcel_interest",RetrieveFromObjectStorage("parcel_interest"))
+         
+       //}
+
+       if (count ===0){
+          count = count+1
+      }
+}
+         
+function display_and_add_contents(Parentclassname,dynamic_content_classname,updatecontents_classname) {
+      const element = document.querySelector(Parentclassname);
+      const currentDisplay = window.getComputedStyle(element).getPropertyValue('display');
+      if (currentDisplay ==='none'){
+           changeContent(dynamic_content_classname, updatecontents_classname)
+           element.style.display = 'block'
+            
+           
+           
+           
+           document.querySelector(".parcel_owner_nav_color1").style.color='rgb(255, 255, 0)'
+          
+           document.querySelector(".parcel_owner_nav_color").style.color='rgb(255, 255, 0)'
+        
+          ReturnToInput(dynamic_content_classname,".parcel_owner_id",RetrieveFromObjectStorage("parcel_owner_id"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_surname",RetrieveFromObjectStorage("parcel_owner_surname"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_firstname",RetrieveFromObjectStorage("parcel_owner_firstname"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_location",RetrieveFromObjectStorage("parcel_owner_location"))
+           ReturnToInput(dynamic_content_classname,".parcel_owner_gender",RetrieveFromObjectStorage("parcel_owner_gender"))
+           ReturnToInput(dynamic_content_classname,".parcel_owner_age",RetrieveFromObjectStorage("parcel_owner_age"))
+         ReturnToInput(dynamic_content_classname,".parcel_owner_marital_status",RetrieveFromObjectStorage("parcel_owner_marital_status"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_contact",RetrieveFromObjectStorage("parcel_owner_contact"))
+           ReturnToInput(dynamic_content_classname,".parcel_owner_ghana_card_id",RetrieveFromObjectStorage("parcel_owner_ghana_card_id"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_qualification",RetrieveFromObjectStorage("parcel_owner_qualification"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_next_of_kin",RetrieveFromObjectStorage("parcel_owner_next_of_kin"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_next_of_kin_contact",RetrieveFromObjectStorage("parcel_owner_next_of_kin_contact"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_image",RetrieveFromObjectStorage("parcel_owner_image"))
+          ReturnToInput(dynamic_content_classname,".parcel_owner_email",RetrieveFromObjectStorage("parcel_owner_email"))
+       
+      
+           
+
+
+
+      }else{
+            
+          element.style.display = 'none'
+      }
+
+
+    }
+
+
+
+
+
+</script>
+
+<!--SaveLInLocalStorage("parcel_owner_id",GetfromInputtag(".parcel_owner_id"))-->
+<script>
+function SaveLInLocalStorage(keyname,valuetosave){
+          
+         if(valuetosave){
+         localStorage.setItem(keyname, valuetosave);
+         }else{
+          localStorage.setItem(keyname, '')
+       }
+
+}
+
+
+
+
+function RetrieveFromObjectStorage(keyname){
+       var saved_value = localStorage.getItem(keyname);
+     
+
+       if (saved_value) {
+              return saved_value
+    
+      } else {
+        return ''
+    }
+   
+   
+}
+
+function SetImageSource(classname,encodedFileContent) {
+       //console.log('encc',encodedImage)
+
+    // Get the image element by its ID
+    const imgElement = document.querySelector(classname);
+
+    const binaryData = atob(encodedFileContent);
+    const arrayBuffer = new ArrayBuffer(binaryData.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    for (let i = 0; i < binaryData.length; i++) {
+        uint8Array[i] = binaryData.charCodeAt(i);
+    }
+    console.log('my blob',new Blob([arrayBuffer]))
+    imgElement.src = URL.createObjectURL(new Blob([arrayBuffer]));
+    //return new Blob([arrayBuffer]);
+}
+
+function ReturnToInput(Containerclassname,childclassname,valuetoinsert){
+        var maindynamic_container = document.querySelector(Containerclassname)
+        var element = maindynamic_container.querySelector(childclassname)
+        
+       if (valuetoinsert){
+       
+       element.value = valuetoinsert
+       }else{
+    element.value = ''
+  }
+ console.log(valuetoinsert)
+}
+
+function MapReturnToInput(Classname,valuetoinsert){
+     
+        var element = document.querySelector(Classname)
+        
+       if (valuetoinsert){
+       element.setAttribute("value", valuetoinsert)
+       //element.value = valuetoinsert
+       }else{
+    element.value = ''
+  }
+ console.log('inserting',valuetoinsert)
+}
+
+
+
+function GetfromInputtag(Containerclassname,childclassname) {
+
+        var maindynamic_container = document.querySelector(Containerclassname)
+        var element = maindynamic_container.querySelector(childclassname)
+        console.log(element.value)
+        return element ? element.value : '';
+ }
+
+
+</script> 
+
+
+ 
+<script>
+function changeLabel(classname,newlabel) {
+    // Get the button element by its ID
+    var button = document.querySelector(classname);
+
+    // Check if the button element is found
+    if (button) {
+        // Change the button label
+        button.innerText = newlabel;
+        // Alternatively, you can use button.textContent = "New Label";
+    } else {
+        console.log("Button not found");
+    }
+}
+
+coordinates = []
+function AddCoordinates(Containerclassname,SubContainerClassname,NorthingClassname,EastingsClassName){
+  var maindynamic_container = document.querySelector(Containerclassname)
+  var Subcontainer_container = maindynamic_container.querySelector(SubContainerClassname)
+  var Northings = Subcontainer_container.querySelector(NorthingClassname).value
+  var Eastings = Subcontainer_container.querySelector(EastingsClassName).value
+  if (Northings && Eastings){
+    coordinates.push([Northings,Eastings]) 
+     SaveLInLocalStorage("coordinates",coordinates)
+     }
+  
+
+}
+
+
+function ClearAllCoordinates(){
+   coordinates.length = 0;
+   localStorage.removeItem("coordinates");
+}
+</script>
+
+
+<script>
+function CollectData(){
+sendtobackend = {
+           parcel_owner_id : RetrieveFromObjectStorage("parcel_owner_id"),
+           parcel_owner_surname : RetrieveFromObjectStorage("parcel_owner_surname"),
+           parcel_owner_firstname : RetrieveFromObjectStorage("parcel_owner_firstname"),
+           parcel_owner_location : RetrieveFromObjectStorage("parcel_owner_location"),
+           parcel_owner_gender : RetrieveFromObjectStorage("parcel_owner_gender"),
+           parcel_owner_age : RetrieveFromObjectStorage("parcel_owner_age"),
+           parcel_owner_marital_status: RetrieveFromObjectStorage("parcel_owner_marital_status"),
+           parcel_owner_contact : RetrieveFromObjectStorage("parcel_owner_contact"),
+           parcel_owner_ghana_card_id : RetrieveFromObjectStorage("parcel_owner_ghana_card_id"),
+           parcel_owner_qualification : RetrieveFromObjectStorage("parcel_owner_qualification"),
+           parcel_owner_next_of_kin : RetrieveFromObjectStorage("parcel_owner_next_of_kin"),
+           parcel_owner_next_of_kin_contact : RetrieveFromObjectStorage("parcel_owner_next_of_kin_contact"),
+           parcel_owner_image : RetrieveFromObjectStorage("parcel_owner_image"),
+           parcel_owner_email : RetrieveFromObjectStorage("parcel_owner_email"),
+
+           chief_id : RetrieveFromObjectStorage("chief_id") ,
+           chief_surname : RetrieveFromObjectStorage("chief_surname"),
+           chief_firstname : RetrieveFromObjectStorage("chief_firstname"),
+           chief_location : RetrieveFromObjectStorage("chief_location"),
+           chief_district : RetrieveFromObjectStorage("chief_district"),
+           chief_region : RetrieveFromObjectStorage("chief_region"),
+           chief_marital_status : RetrieveFromObjectStorage("chief_marital_status"),
+           chief_contact : RetrieveFromObjectStorage("chief_contact"),
+           chief_ghana_card_id : RetrieveFromObjectStorage("chief_ghana_card_id"),
+           chief_qualification : RetrieveFromObjectStorage("chief_qualification"),
+           chief_rank_of_chieftancy : RetrieveFromObjectStorage("chief_rank_of_chieftancy"),
+           chief_year_of_chieftancy_end :  RetrieveFromObjectStorage("chief_year_of_chieftancy_end"),
+           chief_year_of_enstoolment : RetrieveFromObjectStorage("chief_year_of_enstoolment"),
+           chief_gender : RetrieveFromObjectStorage("chief_gender"),
+           chief_image : RetrieveFromObjectStorage("chief_image"),
+           chief_email : RetrieveFromObjectStorage("chief_email"),
+
+           surveyor_license : RetrieveFromObjectStorage("surveyor_license"),
+           surveyor_surname : RetrieveFromObjectStorage("surveyor_surname"),
+           surveyor_firstname : RetrieveFromObjectStorage("surveyor_firstname"),
+           surveyor_location : RetrieveFromObjectStorage("surveyor_location"),
+           surveyor_gender : RetrieveFromObjectStorage("surveyor_gender"),
+           surveyor_age : RetrieveFromObjectStorage("surveyor_age"),
+           surveyor_marital_status : RetrieveFromObjectStorage("surveyor_marital_status"),
+           surveyor_contact : RetrieveFromObjectStorage("surveyor_contact"),
+           surveyor_ghana_card_id : RetrieveFromObjectStorage("surveyor_ghana_card_id"),
+           surveyor_qualification : RetrieveFromObjectStorage("surveyor_qualification"),
+           surveyor_year_of_completion : RetrieveFromObjectStorage("surveyor_year_of_completion"),
+           surveyor_institution_of_completion : RetrieveFromObjectStorage("surveyor_institution_of_completion"),
+           surveyor_professional_body : RetrieveFromObjectStorage("surveyor_professional_body"),
+           surveyor_email : RetrieveFromObjectStorage("surveyor_email"),
+           surveyor_image : RetrieveFromObjectStorage("surveyor_image"),
+
+           parcel_id : RetrieveFromObjectStorage("parcel_id"),
+           parcel_district : RetrieveFromObjectStorage("parcel_district"),
+           parcel_region : RetrieveFromObjectStorage("parcel_region"),
+           parcel_locality : RetrieveFromObjectStorage("parcel_locality"),
+           parcel_status : RetrieveFromObjectStorage("parcel_status"),
+           parcel_interest : RetrieveFromObjectStorage("parcel_interest"),
+           coordinates : RetrieveFromObjectStorage("coordinates")
+  }
+   
+   return sendtobackend
+
+}
+
+
+
+
+
+</script>
+
+<script>
+
+
+
+
+function Submitdtata(data,url,response_type){
+    
+  
+ fetch(url, {
+        method: 'POST',
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": "{{ csrf_token }}",
+          "mode": "same-origin"
+        },
+        body: JSON.stringify(data),
+     })
+     .then(response => {
+            return response.json(data);
+     })
+     .then(response_data => {
+          if (String(response_data['status']) === "200"){
+              console.log("data",response_data['data'])
+              var response_dataset= response_data[response_type]
+              if(response_dataset.length ===1){ 
+                // submitsearch(response_dataset[0])
+              }
+             var data = response_data['data']
+            
+            
+            
+        
+               
+             
+              
+
+          }else if (String(response_data['status']) === "400"){
+              console.log(response_data['msg'])
+             // modal_text.innerHTML = `Sign up failed!. Account already exists.`;
+              //modal_status_logo.innerHTML = `&#xf057`
+              //modal_status_logo.style.color = `rgb(241, 39, 39)`;
+
+              //openModal();
+          }
+
+     }).catch(err=>console.log(err))
+  
+}
+let hencodedFileContent
+function handleFileEncodingAndReturn(Containerclassname,storagename,imageclassname) {
+
+     var maindynamic_container = document.querySelector(Containerclassname)
+      var fileInput = maindynamic_container.querySelector(imageclassname)
+      
+    // fileInput=document.querySelector(imageclassname))
+    const file = fileInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = (e) => {
+               const encodedFileContent = e.target.result.split(',')[1];
+              hencodedFileContent=encodedFileContent
+             localStorage.setItem(storagename,encodedFileContent)
+                
+               
+            };
+            reader.onerror = (error) => {
+                reject(error);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+ 
+}
+
+
+
+
+
+
+function Submiteditdtata(data,url,response_type){
+    
+  
+ fetch(url, {
+        method: 'POST',
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": "{{ csrf_token }}",
+          "mode": "same-origin"
+        },
+        body: JSON.stringify(data),
+     })
+     .then(response => {
+            return response.json(data);
+     })
+     .then(response_data => {
+          if (String(response_data['status']) === "200"){
+              console.log(response_data['msg'])
+              
+             
+             
+              
+
+          }else if (String(response_data['status']) === "400"){
+              console.log(response_data['msg'])
+             // modal_text.innerHTML = `Sign up failed!. Account already exists.`;
+              //modal_status_logo.innerHTML = `&#xf057`
+              //modal_status_logo.style.color = `rgb(241, 39, 39)`;
+
+              //openModal();
+          }
+
+     }).catch(err=>console.log(err))
+  
+}
+
+
+
+
+
+
+function submitsearch(data){
+         console.log(data)
+    
+       
+       
+       if(data){
+      
+       SaveLInLocalStorage("chief_id",data.Parcel_Chief_Involved__Chief_ID)
+        SaveLInLocalStorage("chief_surname",data.Parcel_Chief_Involved__Chief_Surname)
+        SaveLInLocalStorage("chief_firstname",data.Parcel_Chief_Involved__Chief_FirstName)
+        SaveLInLocalStorage("chief_location",data.Parcel_Chief_Involved__Chief_Location)
+        SaveLInLocalStorage("chief_district",data.Parcel_Chief_Involved__Chief_District)
+        SaveLInLocalStorage("chief_region",data.Parcel_Chief_Involved__Chief_Region)
+        SaveLInLocalStorage("chief_marital_status",data.Parcel_Chief_Involved__Chief_Marital_Status)
+        SaveLInLocalStorage("chief_contact",data.Parcel_Chief_Involved__Chief_Contact)
+        SaveLInLocalStorage("chief_ghana_card_id",data.Parcel_Chief_Involved__Chief_Ghana_Card_Id)
+        SaveLInLocalStorage("chief_qualification",data.Parcel_Chief_Involved__Chief_Qualification)
+        SaveLInLocalStorage("chief_rank_of_chieftancy",data.Parcel_Chief_Involved__Chief_Rank_of_Chieftaincy)
+        SaveLInLocalStorage("chief_year_of_chieftancy_end",data.Parcel_Chief_Involved__Chief_Year_of_Chieftancy_End)
+        SaveLInLocalStorage("chief_year_of_enstoolment",data.Parcel_Chief_Involved__Chief_Year_of_Enstoolment)
+        SaveLInLocalStorage("chief_gender",data.Parcel_Chief_Involved__Chief_Gender)
+        SaveLInLocalStorage("chief_image",data.Parcel_Chief_Involved__Chief_Image)
+        SaveLInLocalStorage("chief_email",data.Parcel_Chief_Involved__Chief_EmailField)
+        
+
+        SaveLInLocalStorage("parcel_owner_id",data.Parcel_Owner__Parcel_Owner_ID)
+        SaveLInLocalStorage("parcel_owner_surname",data.Parcel_Owner__Parcel_Owner_Surname)
+        SaveLInLocalStorage("parcel_owner_firstname",data.Parcel_Owner__Parcel_Owner_FirstName)
+        SaveLInLocalStorage("parcel_owner_location",data.Parcel_Owner__Parcel_Owner_Location)
+        SaveLInLocalStorage("parcel_owner_gender",data.Parcel_Owner__Parcel_Owner_Gender)
+        SaveLInLocalStorage("parcel_owner_age",data.Parcel_Owner__Parcel_Owner_Age)
+        SaveLInLocalStorage("parcel_owner_marital_status",data.Parcel_Owner__Parcel_Owner_Marital_Status)
+        SaveLInLocalStorage("parcel_owner_contact",data.Parcel_Owner__Parcel_Owner_Contact)
+        SaveLInLocalStorage("parcel_owner_ghana_card_id",data.Parcel_Owner__Parcel_Owner_Ghana_Card_Id)
+        SaveLInLocalStorage("parcel_owner_qualification",data.Parcel_Owner__Parcel_Owner_Qualification)
+        SaveLInLocalStorage("parcel_owner_next_of_kin",data.Parcel_Owner__Parcel_Owner_Next_of_Kin)
+        SaveLInLocalStorage("parcel_owner_next_of_kin_contact",data.Parcel_Owner__Parcel_Owner_Next_of_Kin_Contact)
+        SaveLInLocalStorage("parcel_owner_image",data.Parcel_Owner__Parcel_Owner_Image)
+        SaveLInLocalStorage("parcel_owner_email",data.Parcel_Owner__Parcel_Owner_EmailField)
+      
+         SaveLInLocalStorage("surveyor_license",data.Parcel_surveyor_who_demarcated__Survey_Licence_Number)
+         SaveLInLocalStorage("surveyor_surname",data.Parcel_surveyor_who_demarcated__Survey_Surname)
+         SaveLInLocalStorage("surveyor_firstname",data.Parcel_surveyor_who_demarcated__Survey_FirstName)
+         SaveLInLocalStorage("surveyor_location",data.Parcel_surveyor_who_demarcated__Survey_Location)
+         SaveLInLocalStorage("surveyor_gender",data.Parcel_surveyor_who_demarcated__Survey_Gender)
+         SaveLInLocalStorage("surveyor_age",data.Parcel_surveyor_who_demarcated__Survey_Age)
+         SaveLInLocalStorage("surveyor_marital_status",data.Parcel_surveyor_who_demarcated__Survey_Marital_Status)
+         SaveLInLocalStorage("surveyor_contact",data.Parcel_surveyor_who_demarcated__Survey_Contact)
+         SaveLInLocalStorage("surveyor_ghana_card_id",data.Parcel_surveyor_who_demarcated__Survey_Ghana_Card_Id)
+         SaveLInLocalStorage("surveyor_qualification",data.Parcel_surveyor_who_demarcated__Survey_Qualification)
+         SaveLInLocalStorage("surveyor_year_of_completion",data.Parcel_surveyor_who_demarcated__Survey_Year_Of_Completions)
+         SaveLInLocalStorage("surveyor_institution_of_completion",data.Parcel_surveyor_who_demarcated__Survey_Institution_of_Completion)
+         SaveLInLocalStorage("surveyor_professional_body",data.Parcel_surveyor_who_demarcated__Survey_Professional_Body)
+         SaveLInLocalStorage("surveyor_image",data.Parcel_surveyor_who_demarcated__Survey_Image)
+         SaveLInLocalStorage("surveyor_email",data.Parcel_surveyor_who_demarcated__Survey_EmailField)
+       
+
+         SaveLInLocalStorage("parcel_id",data.Parcel_ID)
+         SaveLInLocalStorage("parcel_district",data.Parcel_District)
+         SaveLInLocalStorage("parcel_region",data.Parcel_Region)
+         SaveLInLocalStorage("parcel_locality",data.parcel_Locality)
+        SaveLInLocalStorage("parcel_status",data.Parcel_Status)
+         SaveLInLocalStorage("parcel_interest",data.Parcel_land_interest_type)
+         SaveLInLocalStorage("polygon_field",data.Parcel_Boundary__polygon)
+         SaveLInLocalStorage("northings",data.Northings)
+         SaveLInLocalStorage("eastings",data.Eastings)
+         SaveLInLocalStorage("longitude",data.Latitude)
+         SaveLInLocalStorage("latitude",data.Longitude)
+
+        console.log("saved in local storage successfully")
+         
+        // Save old parcel id for edit and remove usage
+        SaveLInLocalStorage("old_parcel_id",data.Parcel_ID)
+        
+       
+  }
+}
+
+var previousselection = ''
+function select_category(ParentClassname,Childclassname){
+  const ParentselectElement = document.querySelector(ParentClassname);
+  const selectElement = ParentselectElement.querySelector(Childclassname);
+
+ const selectedOption = selectElement.selectedOptions[0]?.value;
+   
+   
+
+   if(selectedOption && (selectedOption === 'PARCEL ID' || selectedOption === 'PARCEL OWNER ID') ){
+       if(previousselection ===selectedOption){
+        {}
+
+      }else{
+        console.log("parcel or parcel  owner selected")
+        display_or_hide_details(".completeoptioncontainer")
+        //localStorage.SetItem("searchvalue",selectedOption)
+       changeContentforSearch(".completeoptioncontainer", ".Read_or_Edit_Category_Container")}
+       
+   
+
+
+  }else if( selectedOption !== 'PARCEL ID' && selectedOption !== 'PARCEL OWNER ID'){
+     if(selectedOption === "SEARCH BY"){
+        {}
+         
+     }else if(previousselection ===selectedOption){
+       {}
+
+    }else{
+       
+  
+      changeContentforSearch(".completeoptioncontainer", ".search-for-read-container")
+     }
+    
+    
+
+  }
+   
+  else{
+  console.log("nothing selected yet")
+}
+previousselection = selectedOption
+}
+
+
+var previous = ''
+function GotoSearchbyEditorRemove(ParentClassname,Childclassname){
+ const ParentselectElement = document.querySelector(ParentClassname);
+const Element = ParentselectElement.querySelector(Childclassname);
+
+
+
+ const selectedOption = Element.selectedOptions[0]?.value;
+ 
+
+
+   if(selectedOption === 'Remove or Edit' && selectedOption!==previous){
+     console.log('edit')
+   
+   changeContentforSearch(".completeoptioncontainer", ".search_by_parcel_id_or_owner_id-container")
+   
+   }else if(selectedOption === 'View Only' && selectedOption!==previous){
+       console.log('readonly')
+       changeContentforSearch(".completeoptioncontainer", ".search-for-read-container")
+       
+    
+   }else if (selectedOption === 'choose mode'){
+  {}
+}
+
+ else{
+     console.log("nothing  selected")
+  }
+   previous = selectedOption
+}
+
+
+
+
+var previousactivity = ''
+function Activitytype(Classname){
+ const Element= document.querySelector(Classname);
+
+
+
+
+ const selectedOption = Element.selectedOptions[0]?.value;
+ console.log(selectedOption)
+
+
+   if(selectedOption === 'Add Parcel' ){
+    if(selectedOption===previousactivity){
+    {}
+    }else{
+
+    
+     console.log('edit')
+       const element = document.querySelector(".completeoptioncontainer");
+       
+        element.style.display = 'none'
+       
+       display_and_add_contents('.Add-Parcel','.add-parcel-dynamic-container','.parcel_owner_details')
+   //changeContent(".completeoptioncontainer", ".search_by_parcel_id_or_owner_id-container")
+   
+   }}else if(selectedOption === 'View or Edit or Remove'){
+      if(selectedOption===previousactivity){
+    {}
+    }else{
+
+       console.log('readonly')
+       const element = document.querySelector(".Add-Parcel");
+    
+        element.style.display = 'none'
+       changeContentforSearch(".completeoptioncontainer", ".Activity-Type-Container")
+       
+    
+   }}
+//else if (selectedOption === 'Operation Type'){
+  //{}
+//}
+
+ else{
+     console.log("nothing  selected")
+  }
+   previousactivity = selectedOption
+
+  
+}
+
+window.editremoveurl = "{% url 'SearchParcelforreadwriteedit' %}"
+
+function SearchforEditandRemoveonly(ParentClassname,SearchitemClassname,url,mode){
+      ParentClassement = document.querySelector(ParentClassname)
+      const SearchElementValue =ParentClassement.querySelector(SearchitemClassname)?.value;
+      Submitdtata({"searchdata":SearchElementValue} ,url,'data')
+      
+      display_and_add_contents('.Edit-Remove-Parcel','.edit-remove-parcel-dynamic-container','.parcel_owner_details')
+      
+  
+}
+
+window.removeurl = "{% url 'RemoveParcel' %}"
+function Removedata(url,response_type){
+   get_old_parcel_id = RetrieveFromObjectStorage("old_parcel_id")
+   
+   Submiteditdtata({"old_parcel_id":get_old_parcel_id},url,response_type)
+   
+
+}
+   
+     
+  
+window.editdataurl =  "{% url 'EditParcel' %}" 
+function Editdata(data,url,response_type){
+    var get_old_parcel_id = RetrieveFromObjectStorage("old_parcel_id")
+    data.old_parcel_id = get_old_parcel_id
+    Submiteditdtata(data,url,response_type)
+ 
+}
+
+
+function closeReadOnlyView(){
+   display_or_hide_details(".Read_Only_movable-container")
+}
+
+
+//SearchforReadonly(ParentClassname,SearchitemClassname,url)
+window.readonlyurl = "{% url 'SearchParcelforreadonlyMapdisplay' %}"
+function SearchforReadonly(ParentClassname,SearchitemClassname,url){
+      ParentClassement = document.querySelector(ParentClassname)
+      const SearchElementValue =ParentClassement.querySelector(SearchitemClassname)?.value;
+      SubmitMapdisplaydtata({"searchdata":SearchElementValue} ,url,'data')
+      
+  
+}
+
+//function DisplayparcelBoundories on Map(backenddata){
+//var item = 1
+//for (item;item <= backenddata.length;item++){
+
+//    }
+//''}
+
+</script>
+
+
+<script>
+
+function UpdateParcelDetails(){
+
+           MapReturnToInput(".owner_id",RetrieveFromObjectStorage("parcel_owner_id"))
+           MapReturnToInput(".owner_surname",RetrieveFromObjectStorage("parcel_owner_surname"))
+           MapReturnToInput(".owner_firstname",RetrieveFromObjectStorage("parcel_owner_firstname"))
+           MapReturnToInput(".owner_location",RetrieveFromObjectStorage("parcel_owner_location"))
+           MapReturnToInput(".owner_gender",RetrieveFromObjectStorage("parcel_owner_gender"))
+           MapReturnToInput(".owner_age",RetrieveFromObjectStorage("parcel_owner_age"))
+           MapReturnToInput(".owner_marital_status",RetrieveFromObjectStorage("parcel_owner_marital_status"))
+           MapReturnToInput(".owner_contact",RetrieveFromObjectStorage("parcel_owner_contact"))
+           MapReturnToInput(".owner_ghana_id",RetrieveFromObjectStorage("parcel_owner_ghana_card_id"))
+           MapReturnToInput(".owner_qualification",RetrieveFromObjectStorage("parcel_owner_qualification"))
+           MapReturnToInput(".owner_next_of_kin",RetrieveFromObjectStorage("parcel_owner_next_of_kin"))
+           MapReturnToInput(".owner_next_of_kin_contact",RetrieveFromObjectStorage("parcel_owner_next_of_kin_contact"))
+         SetImageSource(".owner_image",RetrieveFromObjectStorage("parcel_owner_image"))
+           MapReturnToInput(".owner_email",RetrieveFromObjectStorage("parcel_owner_email"))
+
+           MapReturnToInput(".chief1_id",RetrieveFromObjectStorage("chief_id"))
+         MapReturnToInput(".chief1_surname",RetrieveFromObjectStorage("chief_surname"))
+        MapReturnToInput(".chief1_firstname",RetrieveFromObjectStorage("chief_firstname"))
+        MapReturnToInput(".chief1_location",RetrieveFromObjectStorage("chief_location"))
+         MapReturnToInput(".chief1_district",RetrieveFromObjectStorage("chief_district"))
+         MapReturnToInput(".chief1_region",RetrieveFromObjectStorage("chief_region"))
+         MapReturnToInput(".chief1_marital_status",RetrieveFromObjectStorage("chief_marital_status"))
+         MapReturnToInput(".chief1_contact",RetrieveFromObjectStorage("chief_contact"))
+         MapReturnToInput(".chief1_ghana_card_id",RetrieveFromObjectStorage("chief_ghana_card_id"))
+         MapReturnToInput(".chief1_qualification",RetrieveFromObjectStorage("chief_qualification"))
+         MapReturnToInput(".chief1_chief_rank",RetrieveFromObjectStorage("chief_rank_of_chieftancy"))
+        MapReturnToInput(".chief1_end",RetrieveFromObjectStorage("chief_year_of_chieftancy_end"))
+         MapReturnToInput(".chief1_enstool_year",RetrieveFromObjectStorage("chief_year_of_enstoolment"))
+         MapReturnToInput(".chief1_gender",RetrieveFromObjectStorage("chief_gender"))
+        SetImageSource(".chief1_image",RetrieveFromObjectStorage("chief_image"))
+         MapReturnToInput(".chief1_email",RetrieveFromObjectStorage("chief_email"))
+
+        MapReturnToInput(".surveyor1_license",RetrieveFromObjectStorage("surveyor_license"))
+         MapReturnToInput(".surveyor1_surname",RetrieveFromObjectStorage("surveyor_surname"))
+         MapReturnToInput(".surveyor1_firstname",RetrieveFromObjectStorage("surveyor_firstname"))
+         MapReturnToInput(".surveyor1_location",RetrieveFromObjectStorage("surveyor_location"))
+         MapReturnToInput(".surveyor1_gender",RetrieveFromObjectStorage("surveyor_gender"))
+         MapReturnToInput(".surveyor1_age",RetrieveFromObjectStorage("surveyor_age"))
+         MapReturnToInput(".surveyor1_marital_status",RetrieveFromObjectStorage("surveyor_marital_status"))
+         MapReturnToInput(".surveyor1_contact",RetrieveFromObjectStorage("surveyor_contact"))
+         MapReturnToInput(".surveyor1_ghana_id",RetrieveFromObjectStorage("surveyor_ghana_card_id"))
+         MapReturnToInput(".surveyor1_qualification",RetrieveFromObjectStorage("surveyor_qualification"))
+         MapReturnToInput(".surveyor1_completion_year",RetrieveFromObjectStorage("surveyor_year_of_completion"))
+         MapReturnToInput(".surveyor1_institution",RetrieveFromObjectStorage("surveyor_institution_of_completion"))
+         MapReturnToInput(".surveyor1_prof_body",RetrieveFromObjectStorage("surveyor_professional_body"))
+       SetImageSource(".surveyor1_image",RetrieveFromObjectStorage("surveyor_image"))
+         MapReturnToInput(".surveyor1_email",RetrieveFromObjectStorage("surveyor_email"))
+
+         MapReturnToInput(".parcel1_id",RetrieveFromObjectStorage("parcel_id"))
+         MapReturnToInput(".parcel1_district",RetrieveFromObjectStorage("parcel_district"))
+         MapReturnToInput(".parcel1_region",RetrieveFromObjectStorage("parcel_region"))
+         MapReturnToInput(".parcel1_locality",RetrieveFromObjectStorage("parcel_locality"))
+         MapReturnToInput(".parcel1_status",RetrieveFromObjectStorage("parcel_status"))
+         MapReturnToInput(".parcel1_interest",RetrieveFromObjectStorage("parcel_interest"))
+          MapReturnToInput(".parcel1_surveyor_license",RetrieveFromObjectStorage("surveyor_license"))
+         MapReturnToInput(".parcel1_chief_id",RetrieveFromObjectStorage("chief_id"))
+       MapReturnToInput(".parcel1_owner_id",RetrieveFromObjectStorage("parcel_owner_id"))
+       ShowCoordinates("northings","eastings","longitude","latitude")
+       
+
+
+      console.log("executed successfully")
+
+} 
+
+function ShowCoordinates(northings_local_storagevalue, eastings_local_storagevalue, longitudes_local_storagevalue, latitudes_local_storagevalue) {
+    northings_cont = document.querySelector(".northings")
+    eastings_cont = document.querySelector(".eastings")
+    longitudes_cont = document.querySelector(".longitudes")
+    latitudes_cont = document.querySelector(".latitudes")
+
+    northings_cont.innerHTML = '';
+    eastings_cont.innerHTML = '';
+    longitudes_cont.innerHTML = '';
+    latitudes_cont.innerHTML = '';
+ 
+
+    northings_coord = RetrieveFromObjectStorage(northings_local_storagevalue).split(',')
+    eastings_coord = RetrieveFromObjectStorage(eastings_local_storagevalue).split(',')
+    longitudes_coord = RetrieveFromObjectStorage(longitudes_local_storagevalue).split(',')
+    latitudes_coord = RetrieveFromObjectStorage(latitudes_local_storagevalue).split(',')
+
+    for (var i = 0; i < northings_coord.length; i++) {
+        // Create a new div element
+       // var div = document.createElement('div');
+
+        // Create input elements and set their values
+        var northings_input = document.createElement('input');
+        northings_input.value = northings_coord[i];
+        northings_input.readOnly = true;
+
+        var eastings_input = document.createElement('input');
+        eastings_input.value = eastings_coord[i];
+        eastings_input.readOnly = true;
+
+        var longitudes_input = document.createElement('input');
+        longitudes_input.value = longitudes_coord[i];
+        longitudes_input.readOnly = true;
+
+        var latitudes_input = document.createElement('input');
+        latitudes_input.value = latitudes_coord[i];
+        latitudes_input.readOnly = true;
+
+        // Append input elements to the div
+        northings_cont.appendChild(northings_input);
+        eastings_cont.appendChild(eastings_input);
+        longitudes_cont.appendChild(longitudes_input);
+        latitudes_cont.appendChild(latitudes_input);
+
+        // Append the div to the respective container
+       // northings_cont.appendChild(div);
+    }
+
+
+}
+
+       
+ function ShowPropertyDetails(layerName) {
+  console.log('Clicked GeoJSON layer name:', layerName);
+ Submitdtata({"searchdata":layerName} ,window.editremoveurl,'data')
+   UpdateParcelDetails()
+ display_or_hide_details(".Read_Only_movable-container")
+  
+  
+ 
+}
+
+var geoJSONLayers = [];  // Move this line outside of the function
+
+function SubmitMapdisplaydtata(data, url, response_type) {
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      "Accept": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+      "X-CSRFToken": "{{ csrf_token }}",
+      "mode": "same-origin"
+    },
+    body: JSON.stringify(data),
+  })
+    .then(response => response.json())
+    .then(response_data => {
+      if (String(response_data['status']) === "200") {
+        var response_dataset = response_data[response_type];
+        if (response_dataset.length === 1) {
+          submitsearch(response_dataset[0]);
+        }
+        var backendretrieved = response_data['data'];
+
+        // Clear existing layers
+        geoJSONLayers.forEach(layer => {
+          map.removeLayer(layer);
+        });
+        geoJSONLayers.length = 0;
+
+        var num_of_iterations = backendretrieved.length;
+        for (var data = 0; data < num_of_iterations; data++) {
+          var item = backendretrieved[data];
+          var geoJSONData = item.Parcel_Boundary__polygon.replace(/SRID=\d+;|POLYGON \(\(/g, '');
+
+          // Extract coordinates part between parentheses
+          const coordinatesMatch = geoJSONData.match(/([^)]+)/);
+          if (!coordinatesMatch) {
+            console.error('Invalid WKT format.');
+            return;
+          }
+
+          const polygonCoordinates = coordinatesMatch[1]
+            .split(',')
+            .map(coord => {
+              const [lng, lat] = coord.trim().split(' ');
+              console.log('lng',lng)
+              console.log('lat',lat)
+              return [parseFloat(lat), parseFloat(lng)];
+            });
+
+          const geoJson = {
+            type: 'Polygon',
+            coordinates: [polygonCoordinates],
+          };
+
+          var geoJSONLayer = L.geoJSON(geoJson, {
+            onEachFeature: function (feature, layer) {
+              // Customize popup content based on your model fields
+              layer.bindPopup('<b>' + item.Parcel_ID + '</b>');
+              layer.feature.properties.name = item.Parcel_ID
+
+              layer.on('click', function () {
+              ShowPropertyDetails(layer.feature.properties.name);
+               });
+
+           // Bind mouseover event to show layer name on hover
+            layer.on('mouseover', function () {
+            layer.setPopupContent('<b>' + layer.feature.properties.name + '</b>').openPopup();
+            });
+              console.log('y',layer.feature.properties.name.length)
+            }
+          }).addTo(map);
+
+          geoJSONLayers.push(geoJSONLayer);
+           
+        }
+
+        // Get the bounds of all GeoJSON layers
+        var bounds = L.featureGroup(geoJSONLayers).getBounds();
+
+        // Set view to fit the bounds of all GeoJSON data
+        map.fitBounds(bounds);
+      } else if (String(response_data['status']) === "400") {
+        console.log(response_data['msg']);
+        // Handle the error case
+      }
+    })
+    .catch(err => console.log(err));
+    
+}
+
+
+
+
+function zoomToLayer(layerName) {
+  var found = false;
+
+  map.eachLayer(function (layer) {
+    if (layer.feature && layer.feature.properties && layer.feature.properties.name === layerName) {
+      // Get the bounds of the GeoJSON layer
+      var bounds = layer.getBounds();
+
+      // Set view to fit the bounds of the GeoJSON data
+      map.fitBounds(bounds);
+
+      found = true;
+    }
+  });
+
+  if (!found) {
+    console.error('Layer not found:', layerName);
+  }
+}
+
+
+function handleKeyDown(event) {
+    if (event.key === "Enter") {
+        // Call your onclick function here
+       var layername = document.querySelector(".parcelzoom")?.value
+        console.log('g',layername.length)
+        zoomToLayer(layername);
+    }
+}
+
+
+
+</script>
+
+
+
+
+</body>
+</html>
+{% endblock %}
